@@ -1,0 +1,43 @@
+{
+  "id": "lenso.knowledge-base@1",
+  "version": "1.0.0",
+  "portable": true,
+  "cross_lane_transfer": true,
+  "operations": [
+    {
+      "name": "create_draft",
+      "interaction": "request",
+      "request_schema": "schemas/create-draft-request.schema.json",
+      "response_schema": "schemas/create-draft-response.schema.json",
+      "domain_error_schema": "schemas/create-draft-error.schema.json"
+    },
+    {
+      "name": "update_draft",
+      "interaction": "request",
+      "request_schema": "schemas/update-draft-request.schema.json",
+      "response_schema": "schemas/update-draft-response.schema.json",
+      "domain_error_schema": "schemas/update-draft-error.schema.json"
+    },
+    {
+      "name": "publish_article",
+      "interaction": "request",
+      "request_schema": "schemas/publish-article-request.schema.json",
+      "response_schema": "schemas/publish-article-response.schema.json",
+      "domain_error_schema": "schemas/publish-article-error.schema.json"
+    },
+    {
+      "name": "get_published_article",
+      "interaction": "request",
+      "request_schema": "schemas/get-published-article-request.schema.json",
+      "response_schema": "schemas/get-published-article-response.schema.json",
+      "domain_error_schema": "schemas/get-published-article-error.schema.json"
+    },
+    {
+      "name": "search_published_articles",
+      "interaction": "request",
+      "request_schema": "schemas/search-published-articles-request.schema.json",
+      "response_schema": "schemas/search-published-articles-response.schema.json",
+      "domain_error_schema": "schemas/search-published-articles-error.schema.json"
+    }
+  ]
+}

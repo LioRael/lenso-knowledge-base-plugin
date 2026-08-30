@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["articles", "index_revision"],
+  "properties": {
+    "articles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/SearchPublishedArticlesResponseArticlesItem"
+      }
+    },
+    "index_revision": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "SearchPublishedArticlesResponseArticlesItem": {
+      "type": "object",
+      "required": [
+        "article_id",
+        "slug",
+        "title",
+        "article_revision",
+        "publication_revision",
+        "published_at"
+      ],
+      "properties": {
+        "article_id": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "article_revision": {
+          "type": "string"
+        },
+        "publication_revision": {
+          "type": "string"
+        },
+        "published_at": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "title": "SearchPublishedArticlesResponse"
+}

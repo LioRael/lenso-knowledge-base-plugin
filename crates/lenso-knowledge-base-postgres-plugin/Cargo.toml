@@ -1,0 +1,45 @@
+[package]
+name = "lenso-knowledge-base-postgres-plugin"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+publish = false
+repository.workspace = true
+rust-version.workspace = true
+description = "PostgreSQL-backed Knowledge Base Plugin for Lenso applications."
+
+[package.metadata.lenso]
+plugin-id = "lenso.knowledge-base.postgres"
+root-slot = "knowledge-base"
+
+[features]
+default = []
+postgres-acceptance = []
+
+[dependencies]
+lenso.workspace = true
+lenso-auth-sdk.workspace = true
+lenso-capability-access-control.workspace = true
+lenso-capability-knowledge-base = { version = "0.1.0", path = "../lenso-capability-knowledge-base" }
+lenso-capability-organization-membership.workspace = true
+lenso-capability-search.workspace = true
+lenso-capability-search-index.workspace = true
+lenso-capability-secrets.workspace = true
+lenso-kernel.workspace = true
+lenso-postgres-kit.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+sha2.workspace = true
+sqlx.workspace = true
+thiserror.workspace = true
+time.workspace = true
+uuid.workspace = true
+zeroize.workspace = true
+
+[dev-dependencies]
+futures.workspace = true
+lenso-native-adapter.workspace = true
+tokio.workspace = true
+
+[lints]
+workspace = true

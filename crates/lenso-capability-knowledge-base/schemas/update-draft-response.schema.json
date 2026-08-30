@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": [
+    "article_id",
+    "organization_id",
+    "slug",
+    "title",
+    "body_markdown",
+    "revision",
+    "created_by",
+    "created_at",
+    "updated_at"
+  ],
+  "properties": {
+    "article_id": {
+      "type": "string"
+    },
+    "organization_id": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "body_markdown": {
+      "type": "string"
+    },
+    "revision": {
+      "type": "string"
+    },
+    "created_by": {
+      "type": "string"
+    },
+    "created_at": {
+      "type": "string"
+    },
+    "updated_at": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "title": "UpdateDraftResponse"
+}

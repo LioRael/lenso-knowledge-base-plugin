@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["organization_id", "article_id", "expected_revision", "idempotency_key"],
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "article_id": {
+      "type": "string"
+    },
+    "expected_revision": {
+      "type": "string"
+    },
+    "title": {
+      "type": ["string", "null"]
+    },
+    "body_markdown": {
+      "type": ["string", "null"]
+    },
+    "idempotency_key": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "title": "UpdateDraftRequest"
+}
