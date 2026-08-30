@@ -18,12 +18,13 @@ use lenso_capability_access_control::{
 };
 use lenso_capability_knowledge_base as knowledge;
 use lenso_capability_knowledge_base::{
-    CreateDraftError, CreateDraftRequest, CreateDraftResponse, GetPublishedArticleError,
-    GetPublishedArticleRequest, GetPublishedArticleResponse, PublishArticleError,
-    PublishArticleRequest, PublishArticleResponse, SearchPublishedArticlesError,
-    SearchPublishedArticlesRequest, SearchPublishedArticlesResponse,
-    SearchPublishedArticlesResponseArticlesItem, UpdateDraftError, UpdateDraftRequest,
-    UpdateDraftResponse,
+    CreateDraftError, CreateDraftRequest, CreateDraftResponse, GetDraftError, GetDraftRequest,
+    GetDraftResponse, GetPublishedArticleError, GetPublishedArticleRequest,
+    GetPublishedArticleResponse, ListArticlesError, ListArticlesRequest, ListArticlesResponse,
+    ListArticlesResponseArticlesItem, PublishArticleError, PublishArticleRequest,
+    PublishArticleResponse, SearchPublishedArticlesError, SearchPublishedArticlesRequest,
+    SearchPublishedArticlesResponse, SearchPublishedArticlesResponseArticlesItem, UpdateDraftError,
+    UpdateDraftRequest, UpdateDraftResponse,
 };
 use lenso_capability_organization_membership as membership;
 use lenso_capability_organization_membership::{
@@ -347,6 +348,80 @@ impl PostgresKnowledgeBasePlugin {
             result,
             map_update_storage,
         )?))
+    }
+
+    async fn get_draft(
+        &self,
+        context: Ctx,
+        request: GetDraftRequest,
+    ) -> PluginResult<GetDraftResponse, GetDraftError> {
+        self.authorize(
+            &context,
+            knowledge::GET_DRAFT_OPERATION,
+            &request.organization_id,
+            ARTICLES_EDIT,
+        )
+        .await
+        .map_err(map_get_draft_authorization)?;
+        let article_id = Uuid::parse_str(&request.article_id)
+            .map_err(|_| PluginError::domain(GetDraftError::InvalidRequest))?;
+        let record = storage::get_draft(
+            &self.prepared().map_err(PluginError::runtime)?.postgres,
+            &request.organization_id,
+            article_id,
+        )
+        .await
+        .map_err(|error| storage_runtime(&error))
+        .map_err(PluginError::runtime)?
+        .ok_or_else(|| PluginError::domain(GetDraftError::ArticleNotFound))?;
+        Ok(draft_read_response(&record))
+    }
+
+    async fn list_articles(
+        &self,
+        context: Ctx,
+        request: ListArticlesRequest,
+    ) -> PluginResult<ListArticlesResponse, ListArticlesError> {
+        self.authorize(
+            &context,
+            knowledge::LIST_ARTICLES_OPERATION,
+            &request.organization_id,
+            ARTICLES_EDIT,
+        )
+        .await
+        .map_err(map_list_authorization)?;
+        if !(1..=100).contains(&request.limit) {
+            return Err(PluginError::domain(ListArticlesError::InvalidRequest));
+        }
+        let cursor = match request.cursor.as_deref() {
+            Some(value) => Some(
+                storage::decode_article_cursor(value)
+                    .ok_or_else(|| PluginError::domain(ListArticlesError::InvalidRequest))?,
+            ),
+            None => None,
+        };
+        let mut records = storage::list_articles(
+            &self.prepared().map_err(PluginError::runtime)?.postgres,
+            &request.organization_id,
+            cursor.as_ref(),
+            request.limit + 1,
+        )
+        .await
+        .map_err(|error| storage_runtime(&error))
+        .map_err(PluginError::runtime)?;
+        let page_size = usize::try_from(request.limit)
+            .map_err(|_| PluginError::domain(ListArticlesError::InvalidRequest))?;
+        let has_more = records.len() > page_size;
+        if has_more {
+            records.pop();
+        }
+        let next_cursor = has_more
+            .then(|| records.last().map(storage::encode_article_cursor))
+            .flatten();
+        Ok(ListArticlesResponse {
+            articles: records.iter().map(article_summary_response).collect(),
+            next_cursor,
+        })
     }
 
     async fn publish_article(
@@ -798,6 +873,8 @@ macro_rules! authorization_mapper {
 
 authorization_mapper!(map_create_authorization, CreateDraftError);
 authorization_mapper!(map_update_authorization, UpdateDraftError);
+authorization_mapper!(map_get_draft_authorization, GetDraftError);
+authorization_mapper!(map_list_authorization, ListArticlesError);
 authorization_mapper!(map_publish_authorization, PublishArticleError);
 authorization_mapper!(map_get_authorization, GetPublishedArticleError);
 authorization_mapper!(map_search_authorization, SearchPublishedArticlesError);
@@ -827,6 +904,52 @@ fn draft_update_response(record: storage::DraftRecord) -> UpdateDraftResponse {
         created_by: record.created_by,
         created_at: record.created_at,
         updated_at: record.updated_at,
+    }
+}
+
+fn draft_read_response(record: &storage::DraftViewRecord) -> GetDraftResponse {
+    GetDraftResponse {
+        article_id: record.article_id.to_string(),
+        organization_id: record.organization_id.clone(),
+        slug: record.slug.clone(),
+        title: record.title.clone(),
+        body_markdown: record.body_markdown.clone(),
+        revision: record.revision.to_string(),
+        created_by: record.created_by.clone(),
+        updated_by: record.updated_by.clone(),
+        created_at: record.created_at.clone(),
+        updated_at: record.updated_at.clone(),
+        latest_publication_revision: record
+            .latest_publication_revision
+            .map(|value| value.to_string()),
+        latest_published_article_revision: record
+            .latest_published_article_revision
+            .map(|value| value.to_string()),
+        latest_published_by: record.latest_published_by.clone(),
+        latest_published_at: record.latest_published_at.clone(),
+    }
+}
+
+fn article_summary_response(
+    record: &storage::ArticleSummaryRecord,
+) -> ListArticlesResponseArticlesItem {
+    ListArticlesResponseArticlesItem {
+        article_id: record.article_id.to_string(),
+        slug: record.slug.clone(),
+        title: record.title.clone(),
+        revision: record.revision.to_string(),
+        created_by: record.created_by.clone(),
+        updated_by: record.updated_by.clone(),
+        created_at: record.created_at.clone(),
+        updated_at: record.updated_at.clone(),
+        latest_publication_revision: record
+            .latest_publication_revision
+            .map(|value| value.to_string()),
+        latest_published_article_revision: record
+            .latest_published_article_revision
+            .map(|value| value.to_string()),
+        latest_published_by: record.latest_published_by.clone(),
+        latest_published_at: record.latest_published_at.clone(),
     }
 }
 
@@ -1096,6 +1219,26 @@ mod tests {
                 )
                 .is_err()
         );
+        assert!(
+            verifier
+                .project_context::<KnowledgeBaseActor>(
+                    &attached,
+                    knowledge::CAPABILITY_ID,
+                    knowledge::GET_DRAFT_OPERATION,
+                    &UtcClock,
+                )
+                .is_err()
+        );
+        assert!(
+            verifier
+                .project_context::<KnowledgeBaseActor>(
+                    &attached,
+                    knowledge::CAPABILITY_ID,
+                    knowledge::LIST_ARTICLES_OPERATION,
+                    &UtcClock,
+                )
+                .is_err()
+        );
     }
 
     #[test]
@@ -1114,5 +1257,109 @@ mod tests {
             result,
             Err(PluginError::Domain(CreateDraftError::Forbidden))
         );
+
+        let result = futures::executor::block_on(plugin().get_draft(
+            context("other-api"),
+            GetDraftRequest {
+                organization_id: "org_acme".to_owned(),
+                article_id: Uuid::nil().to_string(),
+            },
+        ));
+        assert_eq!(result, Err(PluginError::Domain(GetDraftError::Forbidden)));
+    }
+
+    #[test]
+    fn public_read_grant_never_authorizes_draft_body_access() {
+        let public_config = config()
+            .with_public_read_grants(vec![PublicReadGrant::new("help-center", "org_acme")])
+            .unwrap();
+        let public_plugin = PostgresKnowledgeBasePlugin {
+            config: public_config,
+            secrets: Port::default(),
+            membership: Port::default(),
+            access: Port::default(),
+            search: Port::default(),
+            search_index: Port::default(),
+            prepared: Rc::new(RefCell::new(None)),
+        };
+        let result = futures::executor::block_on(public_plugin.get_draft(
+            context("help-center"),
+            GetDraftRequest {
+                organization_id: "org_acme".to_owned(),
+                article_id: Uuid::nil().to_string(),
+            },
+        ));
+        assert_eq!(result, Err(PluginError::Domain(GetDraftError::Forbidden)));
+    }
+
+    #[test]
+    fn generated_provider_dispatch_preserves_new_operation_domain_failures() {
+        let endpoint = knowledge::KnowledgeBaseEndpoint::new(plugin());
+        let get_result = futures::executor::block_on(
+            <knowledge::KnowledgeBaseGetDraft as lenso_kernel::RequestCapability>::invoke_native(
+                &endpoint,
+                knowledge::GET_DRAFT_OPERATION,
+                GetDraftRequest {
+                    organization_id: "org_acme".to_owned(),
+                    article_id: Uuid::nil().to_string(),
+                },
+                context("other-api"),
+            ),
+        );
+        assert_eq!(get_result, Ok(Err(GetDraftError::Forbidden)));
+
+        let list_result = futures::executor::block_on(
+            <knowledge::KnowledgeBaseListArticles as lenso_kernel::RequestCapability>::invoke_native(
+                &endpoint,
+                knowledge::LIST_ARTICLES_OPERATION,
+                ListArticlesRequest {
+                    organization_id: "org_acme".to_owned(),
+                    limit: 10,
+                    cursor: None,
+                },
+                context("other-api"),
+            ),
+        );
+        assert_eq!(list_result, Ok(Err(ListArticlesError::Forbidden)));
+    }
+
+    #[test]
+    fn article_cursor_is_stable_and_list_schema_cannot_carry_body_markdown() {
+        let summary = storage::ArticleSummaryRecord {
+            article_id: Uuid::new_v4(),
+            slug: "reset-password".to_owned(),
+            title: "Reset a password".to_owned(),
+            revision: 3,
+            created_by: "usr_editor".to_owned(),
+            updated_by: "usr_editor".to_owned(),
+            created_at: "2026-08-31T00:00:00Z".to_owned(),
+            updated_at: "2026-08-31T01:00:00Z".to_owned(),
+            latest_publication_revision: Some(2),
+            latest_published_article_revision: Some(2),
+            latest_published_by: Some("usr_publisher".to_owned()),
+            latest_published_at: Some("2026-08-31T00:30:00Z".to_owned()),
+        };
+        let encoded = storage::encode_article_cursor(&summary);
+        let decoded = storage::decode_article_cursor(&encoded).unwrap();
+        assert_eq!(decoded.article_id, summary.article_id);
+        assert_eq!(
+            decoded.created_at,
+            OffsetDateTime::parse(
+                &summary.created_at,
+                &time::format_description::well_known::Rfc3339
+            )
+            .unwrap()
+        );
+        assert!(storage::decode_article_cursor("not-a-cursor").is_none());
+        assert!(storage::decode_article_cursor(&"x".repeat(129)).is_none());
+
+        let schema: serde_json::Value = serde_json::from_str(include_str!(
+            "../../lenso-capability-knowledge-base/schemas/list-articles-response.schema.json"
+        ))
+        .unwrap();
+        let properties = schema["$defs"]["ListArticlesResponseArticlesItem"]["properties"]
+            .as_object()
+            .unwrap();
+        assert!(!properties.contains_key("body_markdown"));
     }
 }

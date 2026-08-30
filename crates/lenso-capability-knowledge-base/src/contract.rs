@@ -2,6 +2,23 @@
 
 use lenso_contract_authoring as lenso;
 
+#[derive(serde::Deserialize)]
+pub struct Nullable<T>(Option<T>);
+
+impl<T: lenso::JsonSchema> lenso::JsonSchema for Nullable<T> {
+    fn schema_name() -> std::borrow::Cow<'static, str> {
+        format!("Nullable_{}", T::schema_name()).into()
+    }
+
+    fn schema_id() -> std::borrow::Cow<'static, str> {
+        format!("Nullable<{}>", T::schema_id()).into()
+    }
+
+    fn json_schema(generator: &mut schemars::SchemaGenerator) -> schemars::Schema {
+        <Option<T> as lenso::JsonSchema>::json_schema(generator)
+    }
+}
+
 #[derive(lenso::JsonSchema, serde::Deserialize)]
 #[serde(deny_unknown_fields)]
 #[schemars(deny_unknown_fields)]
@@ -73,6 +90,91 @@ pub enum UpdateDraftError {
     RevisionConflict,
     SlugConflict,
     IdempotencyConflict,
+}
+
+#[derive(lenso::JsonSchema, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+#[schemars(deny_unknown_fields)]
+pub struct GetDraftRequest {
+    pub organization_id: String,
+    pub article_id: String,
+}
+
+#[derive(lenso::JsonSchema, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+#[schemars(deny_unknown_fields)]
+pub struct GetDraftResponse {
+    pub article_id: String,
+    pub organization_id: String,
+    pub slug: String,
+    pub title: String,
+    pub body_markdown: String,
+    pub revision: String,
+    pub created_by: String,
+    pub updated_by: String,
+    #[schemars(extend("format" = "date-time"))]
+    pub created_at: String,
+    #[schemars(extend("format" = "date-time"))]
+    pub updated_at: String,
+    pub latest_publication_revision: Nullable<String>,
+    pub latest_published_article_revision: Nullable<String>,
+    pub latest_published_by: Nullable<String>,
+    #[schemars(extend("format" = "date-time"))]
+    pub latest_published_at: Nullable<String>,
+}
+
+#[derive(lenso::DomainError)]
+pub enum GetDraftError {
+    InvalidRequest,
+    Unauthenticated,
+    Forbidden,
+    ArticleNotFound,
+}
+
+#[derive(lenso::JsonSchema, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+#[schemars(deny_unknown_fields)]
+pub struct ListArticlesRequest {
+    pub organization_id: String,
+    #[schemars(range(min = 1, max = 100))]
+    pub limit: i64,
+    pub cursor: Nullable<String>,
+}
+
+#[derive(lenso::JsonSchema, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+#[schemars(deny_unknown_fields)]
+pub struct ListArticlesResponseArticlesItem {
+    pub article_id: String,
+    pub slug: String,
+    pub title: String,
+    pub revision: String,
+    pub created_by: String,
+    pub updated_by: String,
+    #[schemars(extend("format" = "date-time"))]
+    pub created_at: String,
+    #[schemars(extend("format" = "date-time"))]
+    pub updated_at: String,
+    pub latest_publication_revision: Nullable<String>,
+    pub latest_published_article_revision: Nullable<String>,
+    pub latest_published_by: Nullable<String>,
+    #[schemars(extend("format" = "date-time"))]
+    pub latest_published_at: Nullable<String>,
+}
+
+#[derive(lenso::JsonSchema, serde::Deserialize)]
+#[serde(deny_unknown_fields)]
+#[schemars(deny_unknown_fields)]
+pub struct ListArticlesResponse {
+    pub articles: Vec<ListArticlesResponseArticlesItem>,
+    pub next_cursor: Nullable<String>,
+}
+
+#[derive(lenso::DomainError)]
+pub enum ListArticlesError {
+    InvalidRequest,
+    Unauthenticated,
+    Forbidden,
 }
 
 #[derive(lenso::JsonSchema, serde::Deserialize)]
@@ -181,7 +283,7 @@ pub enum SearchPublishedArticlesError {
 #[lenso::capability(
     id = "lenso.knowledge-base",
     major = 1,
-    version = "1.0.0",
+    version = "1.1.0",
     portable = true,
     cross_lane_transfer = true
 )]
@@ -197,6 +299,18 @@ pub trait KnowledgeBase {
         context: lenso::Ctx<'_>,
         request: UpdateDraftRequest,
     ) -> Result<UpdateDraftResponse, UpdateDraftError>;
+
+    async fn get_draft(
+        &self,
+        context: lenso::Ctx<'_>,
+        request: GetDraftRequest,
+    ) -> Result<GetDraftResponse, GetDraftError>;
+
+    async fn list_articles(
+        &self,
+        context: lenso::Ctx<'_>,
+        request: ListArticlesRequest,
+    ) -> Result<ListArticlesResponse, ListArticlesError>;
 
     async fn publish_article(
         &self,
