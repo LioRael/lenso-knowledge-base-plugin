@@ -38,6 +38,46 @@ pub(crate) struct PublishedRecord {
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct DraftViewRecord {
+    pub article_id: Uuid,
+    pub organization_id: String,
+    pub slug: String,
+    pub title: String,
+    pub body_markdown: String,
+    pub revision: i64,
+    pub created_by: String,
+    pub updated_by: String,
+    pub created_at: String,
+    pub updated_at: String,
+    pub latest_publication_revision: Option<i64>,
+    pub latest_published_article_revision: Option<i64>,
+    pub latest_published_by: Option<String>,
+    pub latest_published_at: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct ArticleSummaryRecord {
+    pub article_id: Uuid,
+    pub slug: String,
+    pub title: String,
+    pub revision: i64,
+    pub created_by: String,
+    pub updated_by: String,
+    pub created_at: String,
+    pub updated_at: String,
+    pub latest_publication_revision: Option<i64>,
+    pub latest_published_article_revision: Option<i64>,
+    pub latest_published_by: Option<String>,
+    pub latest_published_at: Option<String>,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
+pub(crate) struct ArticleCursor {
+    pub created_at: OffsetDateTime,
+    pub article_id: Uuid,
+}
+
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub(crate) struct PublicationOutcome {
     pub record: PublishedRecord,
     pub index_synchronized: bool,
@@ -481,6 +521,91 @@ pub(crate) async fn get_published_article(
     row.as_ref().map(published_from_row).transpose()
 }
 
+pub(crate) async fn get_draft(
+    postgres: &OwnedPostgres,
+    organization_id: &str,
+    article_id: Uuid,
+) -> Result<Option<DraftViewRecord>, StorageError> {
+    let row = sqlx::query(
+        "SELECT a.organization_id,a.article_id,a.slug,a.current_revision, \
+                a.created_by,a.created_at,a.updated_at, \
+                r.title,r.body_markdown,r.created_by AS updated_by, \
+                p.publication_revision AS latest_publication_revision, \
+                p.article_revision AS latest_published_article_revision, \
+                p.published_by AS latest_published_by, \
+                p.published_at AS latest_published_at \
+         FROM knowledge_base_articles a \
+         JOIN knowledge_base_article_revisions r \
+           ON r.organization_id=a.organization_id \
+          AND r.article_id=a.article_id \
+          AND r.revision=a.current_revision \
+         LEFT JOIN knowledge_base_publications p \
+           ON p.organization_id=a.organization_id \
+          AND p.article_id=a.article_id \
+          AND p.publication_revision=a.latest_publication_revision \
+         WHERE a.organization_id=$1 AND a.article_id=$2",
+    )
+    .bind(organization_id)
+    .bind(article_id)
+    .fetch_optional(postgres.pool())
+    .await?;
+    row.as_ref().map(draft_view_from_row).transpose()
+}
+
+pub(crate) async fn list_articles(
+    postgres: &OwnedPostgres,
+    organization_id: &str,
+    cursor: Option<&ArticleCursor>,
+    limit: i64,
+) -> Result<Vec<ArticleSummaryRecord>, StorageError> {
+    let cursor_time = cursor.map(|value| value.created_at);
+    let cursor_id = cursor.map(|value| value.article_id);
+    let rows = sqlx::query(
+        "SELECT a.article_id,a.slug,a.current_revision,a.created_by, \
+                a.created_at,a.updated_at, \
+                r.title,r.created_by AS updated_by, \
+                p.publication_revision AS latest_publication_revision, \
+                p.article_revision AS latest_published_article_revision, \
+                p.published_by AS latest_published_by, \
+                p.published_at AS latest_published_at \
+         FROM knowledge_base_articles a \
+         JOIN knowledge_base_article_revisions r \
+           ON r.organization_id=a.organization_id \
+          AND r.article_id=a.article_id \
+          AND r.revision=a.current_revision \
+         LEFT JOIN knowledge_base_publications p \
+           ON p.organization_id=a.organization_id \
+          AND p.article_id=a.article_id \
+          AND p.publication_revision=a.latest_publication_revision \
+         WHERE a.organization_id=$1 \
+           AND ($2::timestamptz IS NULL OR (a.created_at,a.article_id)<($2,$3)) \
+         ORDER BY a.created_at DESC,a.article_id DESC \
+         LIMIT $4",
+    )
+    .bind(organization_id)
+    .bind(cursor_time)
+    .bind(cursor_id)
+    .bind(limit)
+    .fetch_all(postgres.pool())
+    .await?;
+    rows.iter().map(article_summary_from_row).collect()
+}
+
+pub(crate) fn encode_article_cursor(record: &ArticleSummaryRecord) -> String {
+    format!("{}|{}", record.created_at, record.article_id)
+}
+
+pub(crate) fn decode_article_cursor(value: &str) -> Option<ArticleCursor> {
+    if value.len() > 128 {
+        return None;
+    }
+    let (created_at, article_id) = value.split_once('|')?;
+    Some(ArticleCursor {
+        created_at: OffsetDateTime::parse(created_at, &Rfc3339).ok()?,
+        article_id: Uuid::parse_str(article_id).ok()?,
+    })
+}
+
 pub(crate) async fn published_references(
     postgres: &OwnedPostgres,
     organization_id: &str,
@@ -583,8 +708,56 @@ fn published_from_row(row: &sqlx::postgres::PgRow) -> Result<PublishedRecord, St
     })
 }
 
+fn draft_view_from_row(row: &sqlx::postgres::PgRow) -> Result<DraftViewRecord, StorageError> {
+    Ok(DraftViewRecord {
+        article_id: row.try_get("article_id")?,
+        organization_id: row.try_get("organization_id")?,
+        slug: row.try_get("slug")?,
+        title: row.try_get("title")?,
+        body_markdown: row.try_get("body_markdown")?,
+        revision: row.try_get("current_revision")?,
+        created_by: row.try_get("created_by")?,
+        updated_by: row.try_get("updated_by")?,
+        created_at: timestamp(row, "created_at")?,
+        updated_at: timestamp(row, "updated_at")?,
+        latest_publication_revision: row.try_get("latest_publication_revision")?,
+        latest_published_article_revision: row.try_get("latest_published_article_revision")?,
+        latest_published_by: row.try_get("latest_published_by")?,
+        latest_published_at: optional_timestamp(row, "latest_published_at")?,
+    })
+}
+
+fn article_summary_from_row(
+    row: &sqlx::postgres::PgRow,
+) -> Result<ArticleSummaryRecord, StorageError> {
+    Ok(ArticleSummaryRecord {
+        article_id: row.try_get("article_id")?,
+        slug: row.try_get("slug")?,
+        title: row.try_get("title")?,
+        revision: row.try_get("current_revision")?,
+        created_by: row.try_get("created_by")?,
+        updated_by: row.try_get("updated_by")?,
+        created_at: timestamp(row, "created_at")?,
+        updated_at: timestamp(row, "updated_at")?,
+        latest_publication_revision: row.try_get("latest_publication_revision")?,
+        latest_published_article_revision: row.try_get("latest_published_article_revision")?,
+        latest_published_by: row.try_get("latest_published_by")?,
+        latest_published_at: optional_timestamp(row, "latest_published_at")?,
+    })
+}
+
 fn timestamp(row: &sqlx::postgres::PgRow, column: &str) -> Result<String, StorageError> {
     Ok(row.try_get::<OffsetDateTime, _>(column)?.format(&Rfc3339)?)
+}
+
+fn optional_timestamp(
+    row: &sqlx::postgres::PgRow,
+    column: &str,
+) -> Result<Option<String>, StorageError> {
+    row.try_get::<Option<OffsetDateTime>, _>(column)?
+        .map(|value| value.format(&Rfc3339))
+        .transpose()
+        .map_err(StorageError::Time)
 }
 
 fn is_unique_violation(error: &sqlx::Error) -> bool {

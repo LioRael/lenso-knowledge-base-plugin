@@ -5,7 +5,7 @@ use lenso_kernel::{InvocationContext, NativeRequestEndpoint, NativeRequestFuture
 
 use lenso_plugin_authoring::{BoundCapabilityClient, CapabilityClient, CapabilityClientMany};
 pub const CAPABILITY_ID: &str = "lenso.knowledge-base@1";
-pub const DESCRIPTOR_VERSION: &str = "1.0.0";
+pub const DESCRIPTOR_VERSION: &str = "1.1.0";
 pub const PORTABLE: bool = true;
 pub const CROSS_LANE_TRANSFER: bool = true;
 pub const KNOWLEDGE_BASE_CAPABILITY_ID: &str = CAPABILITY_ID;
@@ -13,23 +13,25 @@ pub const KNOWLEDGE_BASE_DESCRIPTOR_VERSION: &str = DESCRIPTOR_VERSION;
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! __lenso_provided_knowledge_base { () => { "{\"capability_id\":\"lenso.knowledge-base@1\",\"descriptor_version\":\"1.0.0\",\"operations\":[\"create_draft\",\"get_published_article\",\"publish_article\",\"search_published_articles\",\"update_draft\"],\"operation_kinds\":{},\"default_admission\":{\"queue_capacity\":0,\"max_concurrency\":1},\"operation_admissions\":{},\"event_admission\":null,\"cross_lane_transfer\":true}" }; }
+macro_rules! __lenso_provided_knowledge_base { () => { "{\"capability_id\":\"lenso.knowledge-base@1\",\"descriptor_version\":\"1.1.0\",\"operations\":[\"create_draft\",\"get_draft\",\"get_published_article\",\"list_articles\",\"publish_article\",\"search_published_articles\",\"update_draft\"],\"operation_kinds\":{},\"default_admission\":{\"queue_capacity\":0,\"max_concurrency\":1},\"operation_admissions\":{},\"event_admission\":null,\"cross_lane_transfer\":true}" }; }
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! __lenso_required_knowledge_base_client { () => { "{\"capability_id\":\"lenso.knowledge-base@1\",\"descriptor_version\":\"1.0.0\",\"cardinality\":\"one\"}" }; }
+macro_rules! __lenso_required_knowledge_base_client { () => { "{\"capability_id\":\"lenso.knowledge-base@1\",\"descriptor_version\":\"1.1.0\",\"cardinality\":\"one\"}" }; }
 
 #[doc(hidden)]
 #[macro_export]
-macro_rules! __lenso_required_many_knowledge_base_client { () => { "{\"capability_id\":\"lenso.knowledge-base@1\",\"descriptor_version\":\"1.0.0\",\"cardinality\":\"many\"}" }; }
+macro_rules! __lenso_required_many_knowledge_base_client { () => { "{\"capability_id\":\"lenso.knowledge-base@1\",\"descriptor_version\":\"1.1.0\",\"cardinality\":\"many\"}" }; }
 
 pub const CREATE_DRAFT_OPERATION: &str = "create_draft";
+pub const GET_DRAFT_OPERATION: &str = "get_draft";
 pub const GET_PUBLISHED_ARTICLE_OPERATION: &str = "get_published_article";
+pub const LIST_ARTICLES_OPERATION: &str = "list_articles";
 pub const PUBLISH_ARTICLE_OPERATION: &str = "publish_article";
 pub const SEARCH_PUBLISHED_ARTICLES_OPERATION: &str = "search_published_articles";
 pub const UPDATE_DRAFT_OPERATION: &str = "update_draft";
 
-pub use lenso_contract_runtime::{OptionalValue, UnknownDomainError};
+pub use lenso_contract_runtime::{OptionalValue, Timestamp, UnknownDomainError};
 use lenso_contract_runtime::{decode_portable_json, encode_portable_json};
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
@@ -93,6 +95,71 @@ pub enum CreateDraftError {
 }
 
 #[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct GetDraftRequest {
+    #[serde(rename = "article_id")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub article_id: String,
+    #[serde(rename = "organization_id")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub organization_id: String,
+}
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct GetDraftResponse {
+    #[serde(rename = "article_id")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub article_id: String,
+    #[serde(rename = "body_markdown")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub body_markdown: String,
+    #[serde(rename = "created_at")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub created_at: Timestamp,
+    #[serde(rename = "created_by")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub created_by: String,
+    #[serde(rename = "latest_publication_revision")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub latest_publication_revision: Option<String>,
+    #[serde(rename = "latest_published_article_revision")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub latest_published_article_revision: Option<String>,
+    #[serde(rename = "latest_published_at")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub latest_published_at: Option<Timestamp>,
+    #[serde(rename = "latest_published_by")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub latest_published_by: Option<String>,
+    #[serde(rename = "organization_id")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub organization_id: String,
+    #[serde(rename = "revision")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub revision: String,
+    #[serde(rename = "slug")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub slug: String,
+    #[serde(rename = "title")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub title: String,
+    #[serde(rename = "updated_at")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub updated_at: Timestamp,
+    #[serde(rename = "updated_by")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub updated_by: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum GetDraftError {
+    ArticleNotFound,
+    Forbidden,
+    InvalidRequest,
+    Unauthenticated,
+    Unknown(UnknownDomainError),
+}
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct GetPublishedArticleRequest {
     #[serde(rename = "article_ref")]
     #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
@@ -136,6 +203,77 @@ pub struct GetPublishedArticleResponse {
 #[derive(Clone, Debug, PartialEq)]
 pub enum GetPublishedArticleError {
     ArticleNotFound,
+    Forbidden,
+    InvalidRequest,
+    Unauthenticated,
+    Unknown(UnknownDomainError),
+}
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct ListArticlesRequest {
+    #[serde(rename = "cursor")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub cursor: Option<String>,
+    #[serde(rename = "limit")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub limit: i64,
+    #[serde(rename = "organization_id")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub organization_id: String,
+}
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct ListArticlesResponse {
+    #[serde(rename = "articles")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub articles: Vec<ListArticlesResponseArticlesItem>,
+    #[serde(rename = "next_cursor")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub next_cursor: Option<String>,
+}
+
+#[derive(Clone, Debug, PartialEq, serde::Serialize, serde::Deserialize)]
+pub struct ListArticlesResponseArticlesItem {
+    #[serde(rename = "article_id")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub article_id: String,
+    #[serde(rename = "created_at")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub created_at: Timestamp,
+    #[serde(rename = "created_by")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub created_by: String,
+    #[serde(rename = "latest_publication_revision")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub latest_publication_revision: Option<String>,
+    #[serde(rename = "latest_published_article_revision")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub latest_published_article_revision: Option<String>,
+    #[serde(rename = "latest_published_at")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub latest_published_at: Option<Timestamp>,
+    #[serde(rename = "latest_published_by")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub latest_published_by: Option<String>,
+    #[serde(rename = "revision")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub revision: String,
+    #[serde(rename = "slug")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub slug: String,
+    #[serde(rename = "title")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub title: String,
+    #[serde(rename = "updated_at")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub updated_at: Timestamp,
+    #[serde(rename = "updated_by")]
+    #[serde(deserialize_with = "lenso_contract_runtime::serde::deserialize_required")]
+    pub updated_by: String,
+}
+
+#[derive(Clone, Debug, PartialEq)]
+pub enum ListArticlesError {
     Forbidden,
     InvalidRequest,
     Unauthenticated,
@@ -346,6 +484,29 @@ impl RequestCapability for KnowledgeBaseCreateDraft {
 }
 
 #[derive(Debug)]
+pub struct KnowledgeBaseGetDraft;
+impl RequestCapability for KnowledgeBaseGetDraft {
+    type Request = GetDraftRequest;
+    type Response = GetDraftResponse;
+    type DomainError = GetDraftError;
+    const ID: &'static str = CAPABILITY_ID;
+    const DESCRIPTOR_VERSION: &'static str = DESCRIPTOR_VERSION;
+
+    fn invoke_native(endpoint: &dyn NativeRequestEndpoint, operation: &str, request: Self::Request, context: InvocationContext) -> NativeRequestFuture<Self> {
+        if operation != GET_DRAFT_OPERATION {
+            return lenso_kernel::invoke_typed_or_erased_native_request::<Self>(endpoint, operation, request, context);
+        }
+        let Some(typed_endpoint) = endpoint
+            .typed_endpoint()
+            .and_then(|endpoint| endpoint.downcast_ref::<KnowledgeBaseRequestEndpoint>())
+        else {
+            return lenso_kernel::invoke_typed_or_erased_native_request::<Self>(endpoint, operation, request, context);
+        };
+        Rc::clone(&typed_endpoint.provider).get_draft(context, request)
+    }
+}
+
+#[derive(Debug)]
 pub struct KnowledgeBaseGetPublishedArticle;
 impl RequestCapability for KnowledgeBaseGetPublishedArticle {
     type Request = GetPublishedArticleRequest;
@@ -365,6 +526,29 @@ impl RequestCapability for KnowledgeBaseGetPublishedArticle {
             return lenso_kernel::invoke_typed_or_erased_native_request::<Self>(endpoint, operation, request, context);
         };
         Rc::clone(&typed_endpoint.provider).get_published_article(context, request)
+    }
+}
+
+#[derive(Debug)]
+pub struct KnowledgeBaseListArticles;
+impl RequestCapability for KnowledgeBaseListArticles {
+    type Request = ListArticlesRequest;
+    type Response = ListArticlesResponse;
+    type DomainError = ListArticlesError;
+    const ID: &'static str = CAPABILITY_ID;
+    const DESCRIPTOR_VERSION: &'static str = DESCRIPTOR_VERSION;
+
+    fn invoke_native(endpoint: &dyn NativeRequestEndpoint, operation: &str, request: Self::Request, context: InvocationContext) -> NativeRequestFuture<Self> {
+        if operation != LIST_ARTICLES_OPERATION {
+            return lenso_kernel::invoke_typed_or_erased_native_request::<Self>(endpoint, operation, request, context);
+        }
+        let Some(typed_endpoint) = endpoint
+            .typed_endpoint()
+            .and_then(|endpoint| endpoint.downcast_ref::<KnowledgeBaseRequestEndpoint>())
+        else {
+            return lenso_kernel::invoke_typed_or_erased_native_request::<Self>(endpoint, operation, request, context);
+        };
+        Rc::clone(&typed_endpoint.provider).list_articles(context, request)
     }
 }
 
@@ -492,6 +676,59 @@ impl<'de> serde::Deserialize<'de> for CreateDraftError {
     }
 }
 
+impl serde::Serialize for GetDraftError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeMap;
+        match self {
+            Self::ArticleNotFound => serializer.serialize_str("article_not_found"),
+            Self::Forbidden => serializer.serialize_str("forbidden"),
+            Self::InvalidRequest => serializer.serialize_str("invalid_request"),
+            Self::Unauthenticated => serializer.serialize_str("unauthenticated"),
+            Self::Unknown(value) => {
+                let mut map = serializer.serialize_map(Some(1 + usize::from(value.payload.is_some()) + value.extra.len()))?;
+                map.serialize_entry("code", &value.code)?;
+                if let Some(payload) = &value.payload {
+                    map.serialize_entry("payload", payload)?;
+                }
+                for (key, extra) in &value.extra {
+                    map.serialize_entry(key, extra)?;
+                }
+                map.end()
+            },
+        }
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for GetDraftError {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = <serde_json::Value as serde::Deserialize>::deserialize(deserializer)?;
+        match value {
+            serde_json::Value::String(code) => match code.as_str() {
+                "article_not_found" => Ok(Self::ArticleNotFound),
+                "forbidden" => Ok(Self::Forbidden),
+                "invalid_request" => Ok(Self::InvalidRequest),
+                "unauthenticated" => Ok(Self::Unauthenticated),
+                _ => Ok(Self::Unknown(UnknownDomainError { code, payload: None, extra: std::collections::BTreeMap::new() })),
+            },
+            serde_json::Value::Object(mut object) => {
+                let Some(code) = object.remove("code").and_then(|value| value.as_str().map(ToOwned::to_owned)) else {
+                    return Err(serde::de::Error::custom("Domain Error object is missing a string code"));
+                };
+                let payload = object.remove("payload");
+                let extra = object.into_iter().collect::<std::collections::BTreeMap<_, _>>();
+                Ok(Self::Unknown(UnknownDomainError { code, payload, extra }))
+            }
+            other => Err(serde::de::Error::custom(format!("Domain Error must be a string or object, got {other}"))),
+        }
+    }
+}
+
 impl serde::Serialize for GetPublishedArticleError {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -527,6 +764,57 @@ impl<'de> serde::Deserialize<'de> for GetPublishedArticleError {
         match value {
             serde_json::Value::String(code) => match code.as_str() {
                 "article_not_found" => Ok(Self::ArticleNotFound),
+                "forbidden" => Ok(Self::Forbidden),
+                "invalid_request" => Ok(Self::InvalidRequest),
+                "unauthenticated" => Ok(Self::Unauthenticated),
+                _ => Ok(Self::Unknown(UnknownDomainError { code, payload: None, extra: std::collections::BTreeMap::new() })),
+            },
+            serde_json::Value::Object(mut object) => {
+                let Some(code) = object.remove("code").and_then(|value| value.as_str().map(ToOwned::to_owned)) else {
+                    return Err(serde::de::Error::custom("Domain Error object is missing a string code"));
+                };
+                let payload = object.remove("payload");
+                let extra = object.into_iter().collect::<std::collections::BTreeMap<_, _>>();
+                Ok(Self::Unknown(UnknownDomainError { code, payload, extra }))
+            }
+            other => Err(serde::de::Error::custom(format!("Domain Error must be a string or object, got {other}"))),
+        }
+    }
+}
+
+impl serde::Serialize for ListArticlesError {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeMap;
+        match self {
+            Self::Forbidden => serializer.serialize_str("forbidden"),
+            Self::InvalidRequest => serializer.serialize_str("invalid_request"),
+            Self::Unauthenticated => serializer.serialize_str("unauthenticated"),
+            Self::Unknown(value) => {
+                let mut map = serializer.serialize_map(Some(1 + usize::from(value.payload.is_some()) + value.extra.len()))?;
+                map.serialize_entry("code", &value.code)?;
+                if let Some(payload) = &value.payload {
+                    map.serialize_entry("payload", payload)?;
+                }
+                for (key, extra) in &value.extra {
+                    map.serialize_entry(key, extra)?;
+                }
+                map.end()
+            },
+        }
+    }
+}
+
+impl<'de> serde::Deserialize<'de> for ListArticlesError {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = <serde_json::Value as serde::Deserialize>::deserialize(deserializer)?;
+        match value {
+            serde_json::Value::String(code) => match code.as_str() {
                 "forbidden" => Ok(Self::Forbidden),
                 "invalid_request" => Ok(Self::InvalidRequest),
                 "unauthenticated" => Ok(Self::Unauthenticated),
@@ -719,12 +1007,26 @@ pub fn decode_create_draft_response(wire: &str) -> Result<CreateDraftResponse, s
 pub fn encode_create_draft_error(value: &CreateDraftError) -> Result<String, serde_json::Error> { encode_portable_json(value) }
 pub fn decode_create_draft_error(wire: &str) -> Result<CreateDraftError, serde_json::Error> { decode_portable_json(wire) }
 
+pub fn encode_get_draft_request(value: &GetDraftRequest) -> Result<String, serde_json::Error> { encode_portable_json(value) }
+pub fn decode_get_draft_request(wire: &str) -> Result<GetDraftRequest, serde_json::Error> { decode_portable_json(wire) }
+pub fn encode_get_draft_response(value: &GetDraftResponse) -> Result<String, serde_json::Error> { encode_portable_json(value) }
+pub fn decode_get_draft_response(wire: &str) -> Result<GetDraftResponse, serde_json::Error> { decode_portable_json(wire) }
+pub fn encode_get_draft_error(value: &GetDraftError) -> Result<String, serde_json::Error> { encode_portable_json(value) }
+pub fn decode_get_draft_error(wire: &str) -> Result<GetDraftError, serde_json::Error> { decode_portable_json(wire) }
+
 pub fn encode_get_published_article_request(value: &GetPublishedArticleRequest) -> Result<String, serde_json::Error> { encode_portable_json(value) }
 pub fn decode_get_published_article_request(wire: &str) -> Result<GetPublishedArticleRequest, serde_json::Error> { decode_portable_json(wire) }
 pub fn encode_get_published_article_response(value: &GetPublishedArticleResponse) -> Result<String, serde_json::Error> { encode_portable_json(value) }
 pub fn decode_get_published_article_response(wire: &str) -> Result<GetPublishedArticleResponse, serde_json::Error> { decode_portable_json(wire) }
 pub fn encode_get_published_article_error(value: &GetPublishedArticleError) -> Result<String, serde_json::Error> { encode_portable_json(value) }
 pub fn decode_get_published_article_error(wire: &str) -> Result<GetPublishedArticleError, serde_json::Error> { decode_portable_json(wire) }
+
+pub fn encode_list_articles_request(value: &ListArticlesRequest) -> Result<String, serde_json::Error> { encode_portable_json(value) }
+pub fn decode_list_articles_request(wire: &str) -> Result<ListArticlesRequest, serde_json::Error> { decode_portable_json(wire) }
+pub fn encode_list_articles_response(value: &ListArticlesResponse) -> Result<String, serde_json::Error> { encode_portable_json(value) }
+pub fn decode_list_articles_response(wire: &str) -> Result<ListArticlesResponse, serde_json::Error> { decode_portable_json(wire) }
+pub fn encode_list_articles_error(value: &ListArticlesError) -> Result<String, serde_json::Error> { encode_portable_json(value) }
+pub fn decode_list_articles_error(wire: &str) -> Result<ListArticlesError, serde_json::Error> { decode_portable_json(wire) }
 
 pub fn encode_publish_article_request(value: &PublishArticleRequest) -> Result<String, serde_json::Error> { encode_portable_json(value) }
 pub fn decode_publish_article_request(wire: &str) -> Result<PublishArticleRequest, serde_json::Error> { decode_portable_json(wire) }
@@ -777,6 +1079,35 @@ impl __LensoIntoKnowledgeBaseCreateDraftResult for Result<CreateDraftResponse, K
 }
 
 #[doc(hidden)]
+pub trait __LensoIntoKnowledgeBaseGetDraftResult {
+    fn __lenso_into_result(self) -> Result<Result<GetDraftResponse, GetDraftError>, RuntimeFailure>;
+}
+impl __LensoIntoKnowledgeBaseGetDraftResult for Result<GetDraftResponse, GetDraftError> {
+    fn __lenso_into_result(self) -> Result<Result<GetDraftResponse, GetDraftError>, RuntimeFailure> { Ok(self) }
+}
+impl __LensoIntoKnowledgeBaseGetDraftResult for Result<Result<GetDraftResponse, GetDraftError>, RuntimeFailure> {
+    fn __lenso_into_result(self) -> Result<Result<GetDraftResponse, GetDraftError>, RuntimeFailure> { self }
+}
+impl __LensoIntoKnowledgeBaseGetDraftResult for Result<GetDraftResponse, lenso_plugin_authoring::PluginError<GetDraftError, RuntimeFailure>> {
+    fn __lenso_into_result(self) -> Result<Result<GetDraftResponse, GetDraftError>, RuntimeFailure> {
+        match self {
+            Ok(value) => Ok(Ok(value)),
+            Err(lenso_plugin_authoring::PluginError::Domain(error)) => Ok(Err(error)),
+            Err(lenso_plugin_authoring::PluginError::Runtime(error)) => Err(error),
+        }
+    }
+}
+impl __LensoIntoKnowledgeBaseGetDraftResult for Result<GetDraftResponse, KnowledgeBaseGetDraftInvocationError> {
+    fn __lenso_into_result(self) -> Result<Result<GetDraftResponse, GetDraftError>, RuntimeFailure> {
+        match self {
+            Ok(value) => Ok(Ok(value)),
+            Err(KnowledgeBaseGetDraftInvocationError::Domain(error)) => Ok(Err(error)),
+            Err(KnowledgeBaseGetDraftInvocationError::Runtime(error)) => Err(error),
+        }
+    }
+}
+
+#[doc(hidden)]
 pub trait __LensoIntoKnowledgeBaseGetPublishedArticleResult {
     fn __lenso_into_result(self) -> Result<Result<GetPublishedArticleResponse, GetPublishedArticleError>, RuntimeFailure>;
 }
@@ -801,6 +1132,35 @@ impl __LensoIntoKnowledgeBaseGetPublishedArticleResult for Result<GetPublishedAr
             Ok(value) => Ok(Ok(value)),
             Err(KnowledgeBaseGetPublishedArticleInvocationError::Domain(error)) => Ok(Err(error)),
             Err(KnowledgeBaseGetPublishedArticleInvocationError::Runtime(error)) => Err(error),
+        }
+    }
+}
+
+#[doc(hidden)]
+pub trait __LensoIntoKnowledgeBaseListArticlesResult {
+    fn __lenso_into_result(self) -> Result<Result<ListArticlesResponse, ListArticlesError>, RuntimeFailure>;
+}
+impl __LensoIntoKnowledgeBaseListArticlesResult for Result<ListArticlesResponse, ListArticlesError> {
+    fn __lenso_into_result(self) -> Result<Result<ListArticlesResponse, ListArticlesError>, RuntimeFailure> { Ok(self) }
+}
+impl __LensoIntoKnowledgeBaseListArticlesResult for Result<Result<ListArticlesResponse, ListArticlesError>, RuntimeFailure> {
+    fn __lenso_into_result(self) -> Result<Result<ListArticlesResponse, ListArticlesError>, RuntimeFailure> { self }
+}
+impl __LensoIntoKnowledgeBaseListArticlesResult for Result<ListArticlesResponse, lenso_plugin_authoring::PluginError<ListArticlesError, RuntimeFailure>> {
+    fn __lenso_into_result(self) -> Result<Result<ListArticlesResponse, ListArticlesError>, RuntimeFailure> {
+        match self {
+            Ok(value) => Ok(Ok(value)),
+            Err(lenso_plugin_authoring::PluginError::Domain(error)) => Ok(Err(error)),
+            Err(lenso_plugin_authoring::PluginError::Runtime(error)) => Err(error),
+        }
+    }
+}
+impl __LensoIntoKnowledgeBaseListArticlesResult for Result<ListArticlesResponse, KnowledgeBaseListArticlesInvocationError> {
+    fn __lenso_into_result(self) -> Result<Result<ListArticlesResponse, ListArticlesError>, RuntimeFailure> {
+        match self {
+            Ok(value) => Ok(Ok(value)),
+            Err(KnowledgeBaseListArticlesInvocationError::Domain(error)) => Ok(Err(error)),
+            Err(KnowledgeBaseListArticlesInvocationError::Runtime(error)) => Err(error),
         }
     }
 }
@@ -894,7 +1254,9 @@ impl __LensoIntoKnowledgeBaseUpdateDraftResult for Result<UpdateDraftResponse, K
 
 pub trait KnowledgeBaseProvider: fmt::Debug + 'static {
     fn create_draft(&self, context: InvocationContext, request: CreateDraftRequest) -> NativeRequestFuture<KnowledgeBaseCreateDraft>;
+    fn get_draft(&self, context: InvocationContext, request: GetDraftRequest) -> NativeRequestFuture<KnowledgeBaseGetDraft>;
     fn get_published_article(&self, context: InvocationContext, request: GetPublishedArticleRequest) -> NativeRequestFuture<KnowledgeBaseGetPublishedArticle>;
+    fn list_articles(&self, context: InvocationContext, request: ListArticlesRequest) -> NativeRequestFuture<KnowledgeBaseListArticles>;
     fn publish_article(&self, context: InvocationContext, request: PublishArticleRequest) -> NativeRequestFuture<KnowledgeBasePublishArticle>;
     fn search_published_articles(&self, context: InvocationContext, request: SearchPublishedArticlesRequest) -> NativeRequestFuture<KnowledgeBaseSearchPublishedArticles>;
     fn update_draft(&self, context: InvocationContext, request: UpdateDraftRequest) -> NativeRequestFuture<KnowledgeBaseUpdateDraft>;
@@ -913,11 +1275,25 @@ macro_rules! __lenso_native_lower_knowledge_base {
                 $crate::__LensoIntoKnowledgeBaseCreateDraftResult::__lenso_into_result(result)
             })
         }
+        fn get_draft(&self, context: __LensoNativeSupportKnowledgeBase::InvocationContext, request: $crate::GetDraftRequest) -> __LensoNativeSupportKnowledgeBase::NativeRequestFuture<$crate::KnowledgeBaseGetDraft> {
+            let plugin = self.clone();
+            ::std::boxed::Box::pin(async move {
+                let result = <$plugin>::get_draft(&plugin, context, request).await;
+                $crate::__LensoIntoKnowledgeBaseGetDraftResult::__lenso_into_result(result)
+            })
+        }
         fn get_published_article(&self, context: __LensoNativeSupportKnowledgeBase::InvocationContext, request: $crate::GetPublishedArticleRequest) -> __LensoNativeSupportKnowledgeBase::NativeRequestFuture<$crate::KnowledgeBaseGetPublishedArticle> {
             let plugin = self.clone();
             ::std::boxed::Box::pin(async move {
                 let result = <$plugin>::get_published_article(&plugin, context, request).await;
                 $crate::__LensoIntoKnowledgeBaseGetPublishedArticleResult::__lenso_into_result(result)
+            })
+        }
+        fn list_articles(&self, context: __LensoNativeSupportKnowledgeBase::InvocationContext, request: $crate::ListArticlesRequest) -> __LensoNativeSupportKnowledgeBase::NativeRequestFuture<$crate::KnowledgeBaseListArticles> {
+            let plugin = self.clone();
+            ::std::boxed::Box::pin(async move {
+                let result = <$plugin>::list_articles(&plugin, context, request).await;
+                $crate::__LensoIntoKnowledgeBaseListArticlesResult::__lenso_into_result(result)
             })
         }
         fn publish_article(&self, context: __LensoNativeSupportKnowledgeBase::InvocationContext, request: $crate::PublishArticleRequest) -> __LensoNativeSupportKnowledgeBase::NativeRequestFuture<$crate::KnowledgeBasePublishArticle> {
@@ -963,7 +1339,9 @@ impl<P: KnowledgeBaseProvider> NativeRequestEndpoint for KnowledgeBaseEndpoint<P
     fn descriptor_version(&self) -> &'static str { DESCRIPTOR_VERSION }
     fn operations(&self) -> &'static [&'static str] { &[
         CREATE_DRAFT_OPERATION,
+        GET_DRAFT_OPERATION,
         GET_PUBLISHED_ARTICLE_OPERATION,
+        LIST_ARTICLES_OPERATION,
         PUBLISH_ARTICLE_OPERATION,
         SEARCH_PUBLISHED_ARTICLES_OPERATION,
         UPDATE_DRAFT_OPERATION,
@@ -984,11 +1362,37 @@ impl<P: KnowledgeBaseProvider> NativeRequestEndpoint for KnowledgeBaseEndpoint<P
                     })
                 })
             },
+            GET_DRAFT_OPERATION => {
+                let Ok(request) = request.downcast::<GetDraftRequest>() else {
+                    return Box::pin(futures::future::ready(Err(RuntimeFailure::ProtocolViolation { capability: CAPABILITY_ID })));
+                };
+                let invocation = Rc::clone(&self.provider).get_draft(context, *request);
+                Box::pin(async move {
+                    invocation.await.map(|result| {
+                        result
+                            .map(|value| Box::new(value) as Box<dyn std::any::Any>)
+                            .map_err(|error| Box::new(error) as Box<dyn std::any::Any>)
+                    })
+                })
+            },
             GET_PUBLISHED_ARTICLE_OPERATION => {
                 let Ok(request) = request.downcast::<GetPublishedArticleRequest>() else {
                     return Box::pin(futures::future::ready(Err(RuntimeFailure::ProtocolViolation { capability: CAPABILITY_ID })));
                 };
                 let invocation = Rc::clone(&self.provider).get_published_article(context, *request);
+                Box::pin(async move {
+                    invocation.await.map(|result| {
+                        result
+                            .map(|value| Box::new(value) as Box<dyn std::any::Any>)
+                            .map_err(|error| Box::new(error) as Box<dyn std::any::Any>)
+                    })
+                })
+            },
+            LIST_ARTICLES_OPERATION => {
+                let Ok(request) = request.downcast::<ListArticlesRequest>() else {
+                    return Box::pin(futures::future::ready(Err(RuntimeFailure::ProtocolViolation { capability: CAPABILITY_ID })));
+                };
+                let invocation = Rc::clone(&self.provider).list_articles(context, *request);
                 Box::pin(async move {
                     invocation.await.map(|result| {
                         result
@@ -1074,7 +1478,9 @@ macro_rules! __lenso_native_provide_knowledge_base {
 #[derive(Debug)]
 pub struct KnowledgeBaseClient {
     create_draft: NativeRequestHandle<KnowledgeBaseCreateDraft>,
+    get_draft: NativeRequestHandle<KnowledgeBaseGetDraft>,
     get_published_article: NativeRequestHandle<KnowledgeBaseGetPublishedArticle>,
+    list_articles: NativeRequestHandle<KnowledgeBaseListArticles>,
     publish_article: NativeRequestHandle<KnowledgeBasePublishArticle>,
     search_published_articles: NativeRequestHandle<KnowledgeBaseSearchPublishedArticles>,
     update_draft: NativeRequestHandle<KnowledgeBaseUpdateDraft>,
@@ -1096,6 +1502,18 @@ impl KnowledgeBaseClient {
             .map_err(KnowledgeBaseCreateDraftInvocationError::Domain)
     }
 
+    pub async fn get_draft(&self, request: GetDraftRequest) -> Result<GetDraftResponse, KnowledgeBaseGetDraftInvocationError> {
+        self.get_draft.invoke(GET_DRAFT_OPERATION, request).await
+            .map_err(KnowledgeBaseGetDraftInvocationError::Runtime)?
+            .map_err(KnowledgeBaseGetDraftInvocationError::Domain)
+    }
+
+    pub async fn get_draft_with_context(&self, context: InvocationContext, request: GetDraftRequest) -> Result<GetDraftResponse, KnowledgeBaseGetDraftInvocationError> {
+        self.get_draft.invoke_with_context(GET_DRAFT_OPERATION, context, request).await
+            .map_err(KnowledgeBaseGetDraftInvocationError::Runtime)?
+            .map_err(KnowledgeBaseGetDraftInvocationError::Domain)
+    }
+
     pub async fn get_published_article(&self, request: GetPublishedArticleRequest) -> Result<GetPublishedArticleResponse, KnowledgeBaseGetPublishedArticleInvocationError> {
         self.get_published_article.invoke(GET_PUBLISHED_ARTICLE_OPERATION, request).await
             .map_err(KnowledgeBaseGetPublishedArticleInvocationError::Runtime)?
@@ -1106,6 +1524,18 @@ impl KnowledgeBaseClient {
         self.get_published_article.invoke_with_context(GET_PUBLISHED_ARTICLE_OPERATION, context, request).await
             .map_err(KnowledgeBaseGetPublishedArticleInvocationError::Runtime)?
             .map_err(KnowledgeBaseGetPublishedArticleInvocationError::Domain)
+    }
+
+    pub async fn list_articles(&self, request: ListArticlesRequest) -> Result<ListArticlesResponse, KnowledgeBaseListArticlesInvocationError> {
+        self.list_articles.invoke(LIST_ARTICLES_OPERATION, request).await
+            .map_err(KnowledgeBaseListArticlesInvocationError::Runtime)?
+            .map_err(KnowledgeBaseListArticlesInvocationError::Domain)
+    }
+
+    pub async fn list_articles_with_context(&self, context: InvocationContext, request: ListArticlesRequest) -> Result<ListArticlesResponse, KnowledgeBaseListArticlesInvocationError> {
+        self.list_articles.invoke_with_context(LIST_ARTICLES_OPERATION, context, request).await
+            .map_err(KnowledgeBaseListArticlesInvocationError::Runtime)?
+            .map_err(KnowledgeBaseListArticlesInvocationError::Domain)
     }
 
     pub async fn publish_article(&self, request: PublishArticleRequest) -> Result<PublishArticleResponse, KnowledgeBasePublishArticleInvocationError> {
@@ -1155,7 +1585,9 @@ impl CapabilityClient for KnowledgeBaseClient {
     fn from_dependencies(dependencies: &PluginDependencies) -> Result<Self, RuntimeFailure> {
         Ok(Self {
             create_draft: dependencies.one::<KnowledgeBaseCreateDraft>()?,
+            get_draft: dependencies.one::<KnowledgeBaseGetDraft>()?,
             get_published_article: dependencies.one::<KnowledgeBaseGetPublishedArticle>()?,
+            list_articles: dependencies.one::<KnowledgeBaseListArticles>()?,
             publish_article: dependencies.one::<KnowledgeBasePublishArticle>()?,
             search_published_articles: dependencies.one::<KnowledgeBaseSearchPublishedArticles>()?,
             update_draft: dependencies.one::<KnowledgeBaseUpdateDraft>()?,
@@ -1182,7 +1614,9 @@ impl CapabilityClientMany for KnowledgeBaseClient {
                     binding.provider_instance(),
                     Self {
                     create_draft: binding.handle().ok_or(RuntimeFailure::Unavailable { capability: CAPABILITY_ID })?.typed::<KnowledgeBaseCreateDraft>()?,
+                    get_draft: binding.handle().ok_or(RuntimeFailure::Unavailable { capability: CAPABILITY_ID })?.typed::<KnowledgeBaseGetDraft>()?,
                     get_published_article: binding.handle().ok_or(RuntimeFailure::Unavailable { capability: CAPABILITY_ID })?.typed::<KnowledgeBaseGetPublishedArticle>()?,
+                    list_articles: binding.handle().ok_or(RuntimeFailure::Unavailable { capability: CAPABILITY_ID })?.typed::<KnowledgeBaseListArticles>()?,
                     publish_article: binding.handle().ok_or(RuntimeFailure::Unavailable { capability: CAPABILITY_ID })?.typed::<KnowledgeBasePublishArticle>()?,
                     search_published_articles: binding.handle().ok_or(RuntimeFailure::Unavailable { capability: CAPABILITY_ID })?.typed::<KnowledgeBaseSearchPublishedArticles>()?,
                     update_draft: binding.handle().ok_or(RuntimeFailure::Unavailable { capability: CAPABILITY_ID })?.typed::<KnowledgeBaseUpdateDraft>()?,
@@ -1199,8 +1633,18 @@ pub enum KnowledgeBaseCreateDraftInvocationError {
     Runtime(RuntimeFailure),
 }
 #[derive(Clone, Debug, PartialEq)]
+pub enum KnowledgeBaseGetDraftInvocationError {
+    Domain(GetDraftError),
+    Runtime(RuntimeFailure),
+}
+#[derive(Clone, Debug, PartialEq)]
 pub enum KnowledgeBaseGetPublishedArticleInvocationError {
     Domain(GetPublishedArticleError),
+    Runtime(RuntimeFailure),
+}
+#[derive(Clone, Debug, PartialEq)]
+pub enum KnowledgeBaseListArticlesInvocationError {
+    Domain(ListArticlesError),
     Runtime(RuntimeFailure),
 }
 #[derive(Clone, Debug, PartialEq)]

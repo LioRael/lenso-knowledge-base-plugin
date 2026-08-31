@@ -5,13 +5,17 @@ draft articles, immutable revisions, explicit publications, and durable command
 idempotency in PostgreSQL.
 
 `lenso.knowledge-base@1` is a portable request Capability. It lets trusted
-product surfaces create and update drafts, publish one exact revision, re-read
-the latest published article, and search published article references. Every
-request requires an exact caller. Mutations require an operation-bound Auth
-assertion, active Organization membership, and Access Control approval;
-published reads may instead use an explicit caller-and-Organization public-read
-grant. Search returns only articles that this Plugin re-read from its
-source-of-truth tables after that authority decision.
+product surfaces create and update drafts, fetch one current draft, page
+author-safe article summaries, publish one exact revision, re-read the latest
+published article, and search published article references. The author list is
+bounded and uses a stable `(created_at, article_id)` keyset cursor; it carries
+revision, author, update, and publication metadata but never Markdown bodies.
+Every request requires an exact caller. Draft reads and mutations require an
+operation-bound Auth assertion, active Organization membership, and Access
+Control approval; published reads may instead use an explicit
+caller-and-Organization public-read grant. Search returns only articles that
+this Plugin re-read from its source-of-truth tables after that authority
+decision.
 
 The Plugin requires `lenso.secrets@1`, `lenso.organization-membership@1`,
 `lenso.access-control@1`, `lenso.search@1`, and `lenso.search-index@1`. Search
@@ -42,6 +46,7 @@ cargo clippy --locked --workspace --all-targets -- -D warnings
 ```
 
 Set `LENSO_KNOWLEDGE_BASE_TEST_DATABASE_URL` to a dedicated PostgreSQL database
-and enable `postgres-acceptance` to run restart/idempotency/revision tests.
-Schema setup and upgrade are explicit operator actions; activation only verifies
-and opens an already prepared schema.
+and enable `postgres-acceptance` to run restart, idempotency, revision, draft
+read, Organization isolation, and stable-pagination tests. Schema setup and
+upgrade are explicit operator actions; activation only verifies and opens an
+already prepared schema.

@@ -1,0 +1,82 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["articles", "next_cursor"],
+  "properties": {
+    "articles": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/ListArticlesResponseArticlesItem"
+      }
+    },
+    "next_cursor": {
+      "$ref": "#/$defs/Nullable_string"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "ListArticlesResponseArticlesItem": {
+      "type": "object",
+      "required": [
+        "article_id",
+        "slug",
+        "title",
+        "revision",
+        "created_by",
+        "updated_by",
+        "created_at",
+        "updated_at",
+        "latest_publication_revision",
+        "latest_published_article_revision",
+        "latest_published_by",
+        "latest_published_at"
+      ],
+      "properties": {
+        "article_id": {
+          "type": "string"
+        },
+        "slug": {
+          "type": "string"
+        },
+        "title": {
+          "type": "string"
+        },
+        "revision": {
+          "type": "string"
+        },
+        "created_by": {
+          "type": "string"
+        },
+        "updated_by": {
+          "type": "string"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "latest_publication_revision": {
+          "$ref": "#/$defs/Nullable_string"
+        },
+        "latest_published_article_revision": {
+          "$ref": "#/$defs/Nullable_string"
+        },
+        "latest_published_by": {
+          "$ref": "#/$defs/Nullable_string"
+        },
+        "latest_published_at": {
+          "format": "date-time",
+          "$ref": "#/$defs/Nullable_string"
+        }
+      },
+      "additionalProperties": false
+    },
+    "Nullable_string": {
+      "type": ["string", "null"]
+    }
+  },
+  "title": "ListArticlesResponse"
+}

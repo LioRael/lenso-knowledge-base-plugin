@@ -12,10 +12,12 @@ may be removed independently.
 
 ## Capability and observable behavior
 
-`lenso.knowledge-base@1` provides five portable request Operations:
+`lenso.knowledge-base@1` provides seven portable request Operations:
 
 - `create_draft`
 - `update_draft`
+- `get_draft`
+- `list_articles`
 - `publish_article`
 - `get_published_article`
 - `search_published_articles`
@@ -25,17 +27,27 @@ article revision and never exposes a newer draft accidentally. Generic Search
 returns opaque `knowledge-base-article` references; this Plugin filters and
 re-reads those references before returning article summaries.
 
+`list_articles` is bounded to 100 entries and pages newest-created articles by
+the immutable `(created_at, article_id)` keyset. Editing or publishing an
+article therefore does not move it across an in-progress pagination walk. Its
+summary includes the latest draft revision and enough publication metadata to
+distinguish an unpublished change, but its query and response shape omit the
+Markdown body. `get_draft` is the only author read that returns that body.
+
 The create-time slug is the stable article address in v1. Draft updates change
 title or Markdown body only, so an unpublished edit cannot silently move the
 currently published article.
 
 ## Authority
 
-Every Operation requires an exact configured caller. Draft and publication
-Operations also require an Auth assertion bound to the exact Capability
-Operation, active membership in the requested Organization, and an Access
-Control decision for the matching permission. Published get/search may instead
-be exposed by an exact `(caller_instance, organization_id)` public-read grant;
+Every Operation requires an exact configured caller. Draft reads, draft
+mutations, and publication Operations also require an Auth assertion bound to
+the exact Capability Operation, active membership in the requested
+Organization, and an Access Control decision for the matching permission.
+`get_draft` and `list_articles` deliberately reuse the existing
+`knowledge-base.articles.edit` permission: a public-read grant is never enough
+to obtain unpublished metadata or a body. Published get/search may instead be
+exposed by an exact `(caller_instance, organization_id)` public-read grant;
 that narrow grant cannot read drafts or cross into another Organization.
 Knowledge Base makes the final decision and source re-read. Search ranking is
 never treated as authorization.
@@ -74,10 +86,12 @@ Adding them would invent misleading deletion semantics for shared articles.
 ## Honest limits
 
 v1 has no locale variants, attachments, article deletion/unpublish, editorial
-approval workflow, rendered HTML, analytics, events, or bulk reindex Operation.
-Public readership is opt-in per exact surface and Organization. Markdown is
-stored and returned as authored; rendering and sanitization belong to the
-consuming surface.
+approval workflow, rendered HTML, authoring Web surface, analytics, events, or
+bulk reindex Operation. Public readership is opt-in per exact surface and
+Organization. Markdown is stored and returned as authored; rendering and
+sanitization belong to the consuming surface.
 
-This is the initial `lenso.knowledge-base@1` Descriptor at version `1.0.0`;
-there is no prior accepted Descriptor against which to claim compatibility.
+Descriptor `1.1.0` adds `get_draft` and `list_articles` without changing the
+existing five Operations. `lenso-contract-codegen lint` accepts the change
+against the published `1.0.0` Descriptor as an additive compatible minor
+evolution.

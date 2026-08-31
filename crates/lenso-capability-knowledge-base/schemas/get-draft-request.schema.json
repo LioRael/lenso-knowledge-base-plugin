@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "required": ["organization_id", "article_id"],
+  "properties": {
+    "organization_id": {
+      "type": "string"
+    },
+    "article_id": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "title": "GetDraftRequest"
+}
