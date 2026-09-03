@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-expected_crates=$'lenso-capability-knowledge-base\nlenso-knowledge-base-postgres-plugin'
+expected_crates=$'lenso-capability-knowledge-base\nlenso-knowledge-base-agent-tools-plugin\nlenso-knowledge-base-postgres-plugin'
 actual_crates="$({
   find crates -mindepth 1 -maxdepth 1 -type d -exec basename {} \;
 } | LC_ALL=C sort)"
@@ -11,7 +11,7 @@ if [[ "$actual_crates" != "$expected_crates" ]]; then
   exit 1
 fi
 
-expected_path_dependencies='./crates/lenso-knowledge-base-postgres-plugin/Cargo.toml:path = "../lenso-capability-knowledge-base"'
+expected_path_dependencies=$'./crates/lenso-knowledge-base-agent-tools-plugin/Cargo.toml:path = "../lenso-capability-knowledge-base"\n./crates/lenso-knowledge-base-postgres-plugin/Cargo.toml:path = "../lenso-capability-knowledge-base"'
 actual_path_dependencies="$(rg --no-heading --with-filename -o 'path\s*=\s*"[^"]+"' --glob 'Cargo.toml' . | sort)"
 
 if [[ "$actual_path_dependencies" != "$expected_path_dependencies" ]]; then

@@ -22,6 +22,12 @@ may be removed independently.
 - `get_published_article`
 - `search_published_articles`
 
+The separate `lenso.knowledge-base.agent-tools` adapter provides
+`lenso.agent.tool-provider@2` and requires exactly one
+`lenso.knowledge-base@1` provider. It owns only the Agent catalog and typed
+argument/result adaptation. Removing it removes the Agent surface without
+removing Knowledge Base facts, Search documents, or publication history.
+
 Draft mutations produce immutable revisions. Publishing records the exact
 article revision and never exposes a newer draft accidentally. Generic Search
 returns opaque `knowledge-base-article` references; this Plugin filters and

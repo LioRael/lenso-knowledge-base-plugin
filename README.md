@@ -17,6 +17,12 @@ caller-and-Organization public-read grant. Search returns only articles that
 this Plugin re-read from its source-of-truth tables after that authority
 decision.
 
+The separate `lenso.knowledge-base.agent-tools` linked Plugin exposes the same
+seven bounded operations to App Agents. It forwards invocation context
+unchanged, so Knowledge Base remains the final owner of exact-caller admission,
+public-read grants, authentication, membership, authorization, revision checks,
+idempotency, publication state, and Search source re-reading.
+
 The Plugin requires `lenso.secrets@1`, `lenso.organization-membership@1`,
 `lenso.access-control@1`, `lenso.search@1`, and `lenso.search-index@1`. Search
 owns only a rebuildable index. Publishing commits the canonical publication
@@ -30,6 +36,8 @@ document.
 
 - `crates/lenso-capability-knowledge-base`: authoritative portable contract,
   Schemas, generated Rust Provider/Client, and freshness gate.
+- `crates/lenso-knowledge-base-agent-tools-plugin`: stateless, removable Agent
+  Tool catalog and typed argument/result adapter.
 - `crates/lenso-knowledge-base-postgres-plugin`: linked native provider,
   authorization, PostgreSQL state, Search collaboration, and operator schema
   workflows.
